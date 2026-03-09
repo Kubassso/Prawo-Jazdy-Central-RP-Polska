@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Egzamin Państwowy - Prawo Jazdy</title>
+<link href="fonts.googleapis.com" rel="stylesheet">
+<style>
+    :root {
+        --primary: #2563eb;
+        --bg: #f8fafc;
+        --card: #ffffff;
+        --text: #1e293b;
+        --accent: #ef4444;
+        --success: #22c55e;
+    }
+
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: var(--bg);
+        color: var(--text);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+    }
+
+    .quiz-container {
+        background: var(--card);
+        width: 100%;
+        max-width: 500px;
+        padding: 40px;
+        border-radius: 24px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Pasek postępu */
+    .progress-bar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 6px;
+        background: #e2e8f0;
+        width: 100%;
+    }
+    #progress-fill {
+        height: 100%;
+        background: var(--primary);
+        width: 0%;
+        transition: width 0.4s ease;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        margin-bottom: 24px;
+        line-height: 1.3;
+    }
+
+    .answers {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .answer-item {
+        display: block;
+        padding: 16px 20px;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-weight: 500;
+    }
+
+    .answer-item:hover {
+        border-color: var(--primary);
+        background: #eff6ff;
+    }
+
+    .answer-item input {
+        display: none;
+    }
+
+    /* Styl po zaznaczeniu */
+    .answer-item:has(input:checked) {
+        border-color: var(--primary);
+        background: var(--primary);
+        color: white;
+    }
+
+    .footer {
+        margin-top: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .timer-box {
+        font-weight: 600;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .timer-circle {
+        color: var(--accent);
+        font-size: 1.2rem;
+        font-weight: 800;
+    }
+
+    button {
+        background: var(--primary);
+        color: white;
+        border: none;
+        padding: 12px 32px;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s, background 0.2s;
+    }
+
+    button:hover {
+        background: #1d4ed8;
+        transform: translateY(-2px);
+    }
+
+    button:active {
+        transform: translateY(0);
+    }
+
+    /* Ekran końcowy */
+    .result-screen {
+        text-align: center;
+    }
+
+    .result-score {
+        font-size: 3rem;
+        font-weight: 800;
+        margin: 10px 0;
+        color: var(--primary);
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 8px 20px;
+        border-radius: 50px;
+        font-weight: 700;
+        margin-bottom: 20px;
+    }
+
+    .pass { background: #dcfce7; color: var(--success); }
+    .fail { background: #fee2e2; color: var(--accent); }
+
+    .branding {
+        font-size: 0.8rem;
+        color: #64748b;
+        margin-top: 20px;
+    }
+</style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <div class="progress-bar"><div id="progress-fill"></div></div>
+    
+    <div id="quiz-content">
+        <h2 id="question">Ładowanie pytania...</h2>
+        <div class="answers" id="answers"></div>
+
+        <div class="footer">
+            <div class="timer-box">
+                Pozostało: <span class="timer-circle" id="time">20</span>s
+            </div>
+            <button onclick="nextQuestion()">Dalej</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const questions = [
+    { q: "Czy można wyprzedzać na przejściu dla pieszych?", a: ["Tak, zawsze", "Tak, jeśli nie ma pieszych", "Nie, jest to zabronione", "Tylko w terenie zabudowanym"], correct: 2 },
+    { q: "Kto ma pierwszeństwo na skrzyżowaniu równorzędnym?", a: ["Pojazd z lewej strony", "Pojazd z prawej strony", "Pojazd jadący szybciej", "Pieszy"], correct: 1 },
+    { q: "Czy można korzystać z telefonu komórkowego podczas jazdy?", a: ["Tak", "Nie", "Tak, tylko w korku", "Tak, jedną ręką"], correct: 1 },
+    { q: "Co oznacza znak „zakaz wjazdu”?", a: ["Zakaz zatrzymywania", "Zakaz parkowania", "Zakaz wjazdu pojazdów", "Droga jednokierunkowa"], correct: 2 },
+    { q: "Co oznacza znak „strefa zamieszkania”?", a: ["Minimalna prędkość 20 km/h", "Pierwszeństwo pieszych i prędkość do 20 km/h", "Zakaz wjazdu pojazdów", "Droga jednokierunkowa"], correct: 1 },
+    { q: "Co należy zrobić w pierwszej kolejności przy wypadku drogowym?", a: ["Zadzwonić do znajomych", "Udzielić pomocy bez zabezpieczenia", "Zabezpieczyć miejsce zdarzenia", "Odjechać"], correct: 2 },
+    { q: "Jak udziela się RKO u dorosłego?", a: ["10 uciśnięć i 5 oddechów", "30 uciśnięć i 2 oddechy", "20 uciśnięć i 1 oddech", "Tylko oddechy"], correct: 1 },
+    { q: "Czy nie można nigdy najeżdżać na linię podwójną ciągłą?", a: ["Tak, nigdy", "Nie, można w wyjątkowych sytuacjach", "Tylko nocą", "Tylko motocyklem"], correct: 1 },
+    { q: "Jedziesz we mgle, widoczność mniejsza niż 50 m. Jakich świateł używasz?", a: ["Drogowych", "Pozycyjnych", "Przeciwmgłowych", "Awaryjnych"], correct: 2 },
+    { q: "Co znaczy znak B-20?", a: ["Zakaz skrętu", "Stop", "Droga jednokierunkowa", "Ustąp pierwszeństwa"], correct: 1 }
+];
+
+let current = 0;
+let score = 0;
+let time = 20;
+let timer;
+
+function updateProgress() {
+    const progress = ((current) / questions.length) * 100;
+    document.getElementById("progress-fill").style.width = `${progress}%`;
+}
+
+function showQuestion() {
+    clearInterval(timer);
+    time = 20;
+    document.getElementById("time").textContent = time;
+    updateProgress();
+
+    const q = questions[current];
+    document.getElementById("question").textContent = q.q;
+
+    const answersDiv = document.getElementById("answers");
+    answersDiv.innerHTML = "";
+
+    q.a.forEach((ans, i) => {
+        answersDiv.innerHTML += `
+            <label class="answer-item">
+                <input type="radio" name="answer" value="${i}">
+                ${ans}
+            </label>
+        `;
+    });
+
+    timer = setInterval(() => {
+        time--;
+        document.getElementById("time").textContent = time;
+        if (time <= 5) document.getElementById("time").style.color = "var(--accent)";
+        else document.getElementById("time").style.color = "var(--primary)";
+        if (time === 0) nextQuestion();
+    }, 1000);
+}
+
+function nextQuestion() {
+    clearInterval(timer);
+    const selected = document.querySelector('input[name="answer"]:checked');
+    if (selected && parseInt(selected.value) === questions[current].correct) {
+        score++;
+    }
+    
+    current++;
+    if (current < questions.length) {
+        showQuestion();
+    } else {
+        finishQuiz();
+    }
+}
+
+function finishQuiz() {
+    document.getElementById("progress-fill").style.width = `100%`;
+    const isPassed = score >= 7;
+    const content = document.getElementById("quiz-content");
+    
+    content.innerHTML = `
+        <div class="result-screen">
+            <h2>Egzamin zakończony</h2>
+            <div class="result-score">${score} / ${questions.length}</div>
+            <div class="status-badge ${isPassed ? 'pass' : 'fail'}">
+                ${isPassed ? '✅ EGZAMIN ZALICZONY' : '❌ EGZAMIN NIEZALICZONY'}
+            </div>
+            <p style="color: #64748b">Wymagane minimum: 7/10</p>
+            <button onclick="location.reload()" style="margin-top: 20px">Spróbuj ponownie</button>
+            <div class="branding">
+                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+                <strong>Central RP</strong><br>Dziękujemy za podejście do egzaminu.
+            </div>
+        </div>
+    `;
+}
+
+showQuestion();
+</script>
+
+</body>
+</html>
